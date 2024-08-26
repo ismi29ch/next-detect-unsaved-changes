@@ -1,13 +1,14 @@
+
 ```markdown
 # useDetectUnsavedChanges
 
-`useDetectUnsavedChanges` is a custom React hook designed to help manage unsaved changes in your application. It allows you to prevent users from navigating away or reloading the page if there are unsaved changes, by displaying a custom modal or dialog.
+`useDetectUnsavedChanges` is a custom React hook and component designed to help manage unsaved changes in your application. It allows you to prevent users from navigating away or reloading the page if there are unsaved changes, by displaying a custom modal or dialog.
 
 ## Features
 
 - Detects unsaved changes when a user attempts to navigate away or reload the page.
 - Provides a boolean state to control whether navigation should be blocked.
-- Easily integrates with custom modals or dialogs to handle user confirmation.
+- Includes a `DetectUnsavedChanges` component to simplify usage and conditional rendering.
 
 ## Installation
 
@@ -25,9 +26,9 @@ yarn add use-detect-unsaved-changes
 
 ## Usage
 
-### Basic Example
+### Custom Hook
 
-Here's a basic example of how to use the `useDetectUnsavedChanges` hook in a React component:
+Here's how to use the `useDetectUnsavedChanges` hook in a React component:
 
 ```javascript
 import React, { useState } from 'react';
@@ -86,6 +87,56 @@ const MyFormComponent = () => {
 export default MyFormComponent;
 ```
 
+### DetectUnsavedChanges Component
+
+For an easier integration, you can use the `DetectUnsavedChanges` component:
+
+```javascript
+import React from 'react';
+import { DetectUnsavedChanges } from 'use-detect-unsaved-changes';
+
+const MyFormComponent = () => {
+  const [formData, setFormData] = useState({ name: '', email: '' });
+  const [isDirty, setIsDirty] = useState(false);
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+    setIsDirty(true);
+  };
+
+  const handleSave = () => {
+    // Perform save operation
+    setIsDirty(false);
+  };
+
+  return (
+    <DetectUnsavedChanges unsavedChanges={isDirty}>
+      <form>
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          onChange={handleInputChange}
+        />
+        <input
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleInputChange}
+        />
+        <button type="button" onClick={handleSave}>Save</button>
+      </form>
+      {/* Add your custom modal or dialog here */}
+    </DetectUnsavedChanges>
+  );
+};
+
+export default MyFormComponent;
+```
+
 ### API
 
 #### `useDetectUnsavedChanges(unsavedChanges: boolean)`
@@ -98,9 +149,20 @@ export default MyFormComponent;
 
 - `blockNavigation` (boolean): Returns `true` if navigation should be blocked due to unsaved changes; otherwise `false`.
 
+#### `DetectUnsavedChanges`
+
+**Props:**
+
+- `unsavedChanges` (boolean): A flag indicating whether there are unsaved changes.
+- `children` (React.ReactNode): The content to be conditionally rendered based on unsaved changes.
+
+**Returns:**
+
+- Renders `children` if navigation should be blocked; otherwise, renders nothing.
+
 ## Custom Modal Integration
 
-You can use the `blockNavigation` state to conditionally render a custom modal or dialog for handling unsaved changes. For example:
+You can use the `blockNavigation` state or the `DetectUnsavedChanges` component to conditionally render a custom modal or dialog for handling unsaved changes. For example:
 
 ```javascript
 {blockNavigation && (
@@ -128,7 +190,4 @@ This package is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 For more information, please refer to the official documentation or reach out with any questions or feedback.
 ```
 
-### Notes:
-- Replace `use-detect-unsaved-changes` with the actual package name if it’s different.
-- Adjust the paths and file names if needed.
-- Include a LICENSE file if you are distributing the package with an open-source license.
+This updated README includes information on how to use the `DetectUnsavedChanges` component along with the `useDetectUnsavedChanges` hook, making it easier for users to integrate unsaved changes detection into their applications.

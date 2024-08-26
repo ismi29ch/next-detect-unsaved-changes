@@ -1,37 +1,70 @@
-"use client";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import Router from "next/router";
 
-const useUnsavedChangesHandler = (
-  notSaved: boolean,
-  confirmationMessage = "Changes you made may not be saved."
-): void => {
-  useEffect(() => {
-    const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
-      (e || window.event).returnValue = confirmationMessage;
-      return confirmationMessage;
-    };
+/**
+ * Custom hook to detect unsaved changes and prevent navigation if necessary.
+ *
+ * @returns {boolean} - Returns `true` if navigation should be blocked; otherwise `false`.
+ */
+export const useDetectUnsavedChanges = <T>(unsavedChanges: T): boolean => {
+  const [blockNavigation, setBlockNavigation] = useState(false);
 
-    const beforeRouteHandler = (url: string) => {
-      if (Router.pathname !== url && !confirm(confirmationMessage)) {
-        Router.events.emit("routeChangeError");
-        throw `Route change to "${url}" was aborted (this error can be safely ignored). See https://github.com/zeit/next.js/issues/2476.`;
+  useEffect(() => {
+    /**
+     * Handles the `beforeunload` event to prompt the user when they attempt
+     * to reload or close the page with unsaved changes.
+     *
+     * @returns {string} - Returns a confirmation message to display to the user.
+     */
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (unsavedChanges) {
+        const confirmationMessage =
+          "You have unsaved changes. Do you really want to leave?";
+        e.preventDefault();
+        e.returnValue = confirmationMessage; // For most browsers
+        return confirmationMessage; // For some older browsers
       }
     };
 
-    if (notSaved) {
-      window.addEventListener("beforeunload", beforeUnloadHandler);
-      Router.events.on("routeChangeStart", beforeRouteHandler);
-    } else {
-      window.removeEventListener("beforeunload", beforeUnloadHandler);
-      Router.events.off("routeChangeStart", beforeRouteHandler);
-    }
+    // Attach the `beforeunload` event listener
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    /**
+     * Handles route change attempts within the app. Prevents navigation
+     * if there are unsaved changes by simulating an error.
+     */
+    const handleRouteChangeStart = () => {
+      if (unsavedChanges) {
+        setBlockNavigation(true);
+        Router.events.emit("routeChangeError");
+        throw "Abort route change. Please ignore this error.";
+      }
+    };
+
+    // Attach the route change event listener
+    Router.events.on("routeChangeStart", handleRouteChangeStart);
 
     return () => {
-      window.removeEventListener("beforeunload", beforeUnloadHandler);
-      Router.events.off("routeChangeStart", beforeRouteHandler);
+      // Cleanup the event listeners on component unmount or when `unsavedChanges` changes
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      Router.events.off("routeChangeStart", handleRouteChangeStart);
     };
-  }, [notSaved, confirmationMessage]);
+  }, [unsavedChanges]);
+
+  return blockNavigation;
 };
 
-export default useUnsavedChangesHandler;
+interface DetectUnsavedChanges<T> {
+  unsavedChanges: T;
+  children: React.ReactNode;
+}
+
+export const DetectUnsavedChanges = <T>({
+  unsavedChanges,
+  children,
+}: DetectUnsavedChanges<T>) => {
+  const shouldBlockNavigation = useDetectUnsavedChanges(unsavedChanges);
+
+  if (shouldBlockNavigation) return children;
+  return null;
+};

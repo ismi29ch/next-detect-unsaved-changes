@@ -54,15 +54,15 @@ export const useDetectUnsavedChanges = <T>(unsavedChanges: T): boolean => {
   return blockNavigation;
 };
 
-interface DetectUnsavedChanges<T> {
+interface DetectUnsavedChangesProviderProps<T> {
   unsavedChanges: T;
   children: React.ReactNode;
 }
 
-export const DetectUnsavedChanges = <T>({
+export const DetectUnsavedChangesProvider = <T>({
   unsavedChanges,
   children,
-}: DetectUnsavedChanges<T>) => {
+}: DetectUnsavedChangesProviderProps<T>) => {
   const shouldBlockNavigation = useDetectUnsavedChanges(unsavedChanges);
 
   if (shouldBlockNavigation) return children;
